@@ -2,39 +2,31 @@ import csv
 import os
 import re
 
-# 适配 QPython
+# for QPython
 os.chdir(os.path.dirname(__file__))
 
-# 识别账单文件。形如 微信支付账单(20121231-20130331)
+# bill file name: 微信支付账单(20121231-20130331)
 date = r'20\d\d(?:0[1-9]|1[0-2])(?:0[1-9]|[12][0-9]|3[01])'
 pattern = rf'微信支付账单\({date}-{date}\)\.csv'
 bill_list = [_ for _ in os.listdir() if re.match(pattern, _)]
 
-# 读取全部。获取时间信息、去重、排序
-time = [[], [], []]
-
-
-def read(_):
-    global f
-    with open(_, 'r', encoding='utf-8-sig', newline='') as f:
+bill, time = set(), [[], [], []]
+for b in bill_list:
+    with open(b, 'r', encoding='utf-8-sig', newline='') as f:
         f = f.read().splitlines()
-        time[0].append(f[2][6:25])
-        time[1].append(f[2][33:52])
-        time[2].append(f[4][6:25])
-        return f
+    for i, v in enumerate([f[2][6:25], f[2][33:52], f[4][6:25]]):
+        time[i].append(v)
+    for _ in csv.reader(f[17:]):  # bill data start on line 18
+        bill.add(tuple(_))
+bill = list(bill)
 
-
-bill = list({
-    # 数据从第 18 行开始
-    tuple(_) for b in bill_list for _ in csv.reader(read(b)[17:])
-})
-for _ in (bill, *time):  # 批量排序
+for _ in (bill, *time):  # batch sort
     _.sort(reverse=True)
 
-# 可能存在重叠部分，[笔数] 和 [金额] 需重新计算
+# may be overlap, need update
 count = [[0, 0], [0, 0], [0, 0]]
 for b in bill:
-    for i, s in (0, '收入'), (1, '支出'), (2, '/'):
+    for i, s in enumerate(['收入', '支出', '/']):
         if b[4] == s:
             count[i][0] += 1
             count[i][1] += float(b[5][1:])
