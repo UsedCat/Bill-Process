@@ -1,6 +1,7 @@
 import csv
 import os
 import re
+from decimal import Decimal
 
 # for QPython
 os.chdir(os.path.dirname(__file__))
@@ -29,7 +30,7 @@ for b in bill:
     for i, s in enumerate(['收入', '支出', '/']):
         if b[4] == s:
             count[i][0] += 1
-            count[i][1] += float(b[5][1:])
+            count[i][1] += Decimal(b[5][1:])
 
 head = f"""微信支付账单明细,,,,,,,,
 微信昵称：[{f[1][6:-9]}],,,,,,,,
